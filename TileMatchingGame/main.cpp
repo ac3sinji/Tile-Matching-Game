@@ -28,7 +28,7 @@ struct RectInt {
 
 struct AppState {
     GameCore game;
-    std::wstring statusText = L"게임 시작";
+    std::wstring statusText = L"\uAC8C\uC784 \uC2DC\uC791";
     RectInt playerBoardRect{30, 170, 330, 470};
 };
 
@@ -104,18 +104,18 @@ void DrawBoard(HDC hdc, const BoardState& board, const RectInt& rect) {
 
 std::wstring BuildStatusText(const AppState& state) {
     if (state.game.GetWinner().has_value()) {
-        return state.game.GetWinner().value() == Participant::Player ? L"승리!" : L"패배!";
+        return state.game.GetWinner().value() == Participant::Player ? L"\uC2B9\uB9AC!" : L"\uD328\uBC30!";
     }
 
     if (state.game.IsWaitingForPlayer()) {
         const auto tile = state.game.GetCurrentSpawnTile();
         if (tile.has_value()) {
-            return std::wstring(L"클릭해서 배치: ") + TileTypeToText(tile->type);
+            return std::wstring(L"\uD074\uB9AD\uD574\uC11C \uBC30\uCE58: ") + TileTypeToText(tile->type);
         }
-        return L"클릭해서 배치";
+        return L"\uD074\uB9AD\uD574\uC11C \uBC30\uCE58";
     }
 
-    return L"턴 진행 중...";
+    return L"\uD134 \uC9C4\uD589 \uC911...";
 }
 
 bool TryMapPointToCell(const RectInt& rect, int x, int y, int& outRow, int& outCol) {
@@ -137,19 +137,19 @@ void PaintWindow(HWND hwnd, AppState& state) {
 
     SetBkMode(hdc, TRANSPARENT);
 
-    std::wstring targetText = std::wstring(L"플레이어 목표: ") + TileTypeToText(state.game.GetPlayerTargetType()) +
-        L" / AI 목표: " + TileTypeToText(state.game.GetAITargetType());
+    std::wstring targetText = std::wstring(L"\uD50C\uB808\uC774\uC5B4 \uBAA9\uD45C: ") + TileTypeToText(state.game.GetPlayerTargetType()) +
+        L" / AI \uBAA9\uD45C: " + TileTypeToText(state.game.GetAITargetType());
     TextOutW(hdc, 20, 20, targetText.c_str(), static_cast<int>(targetText.size()));
 
     const auto spawn = state.game.GetCurrentSpawnTile();
-    std::wstring spawnText = L"현재 스폰 타일: ";
-    spawnText += spawn.has_value() ? TileTypeToText(spawn->type) : L"없음";
+    std::wstring spawnText = L"\uD604\uC7AC \uC2A4\uD3F0 \uD0C0\uC77C: ";
+    spawnText += spawn.has_value() ? TileTypeToText(spawn->type) : L"\uC5C6\uC74C";
     TextOutW(hdc, 20, 50, spawnText.c_str(), static_cast<int>(spawnText.size()));
 
     state.statusText = BuildStatusText(state);
     TextOutW(hdc, 20, 80, state.statusText.c_str(), static_cast<int>(state.statusText.size()));
 
-    std::wstring usage = L"보드 칸을 클릭해 타일 배치";
+    std::wstring usage = L"\uBCF4\uB4DC \uCE78\uC744 \uD074\uB9AD\uD574 \uD0C0\uC77C \uBC30\uCE58";
     TextOutW(hdc, 20, 110, usage.c_str(), static_cast<int>(usage.size()));
 
     std::wstring playerLabel = L"Player";
@@ -157,7 +157,7 @@ void PaintWindow(HWND hwnd, AppState& state) {
     DrawBoard(hdc, state.game.GetPlayerBoard(), state.playerBoardRect);
 
     RectInt aiRect{state.playerBoardRect.left, state.playerBoardRect.bottom + 55, state.playerBoardRect.right, state.playerBoardRect.bottom + 150};
-    std::wstring aiLabel = L"AI 채운 칸 수";
+    std::wstring aiLabel = L"AI \uCC44\uC6B4 \uCE78 \uC218";
     TextOutW(hdc, aiRect.left, aiRect.top - 22, aiLabel.c_str(), static_cast<int>(aiLabel.size()));
 
     const BoardState& aiBoard = state.game.GetAIBoard();
