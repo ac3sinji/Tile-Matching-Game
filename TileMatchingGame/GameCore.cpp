@@ -90,6 +90,14 @@ TileType GameCore::GetAITargetType() const {
     return aiTargetType_;
 }
 
+const BoardState& GameCore::GetPlayerBoard() const {
+    return playerBoard_;
+}
+
+const BoardState& GameCore::GetAIBoard() const {
+    return aiBoard_;
+}
+
 void GameCore::AssignTargets() {
     std::array<TileType, 5> regularTypes{
         TileType::Bamboo,

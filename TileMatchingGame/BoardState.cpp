@@ -49,4 +49,14 @@ bool BoardState::PlaceFirstEmpty(const Tile& tile, TileType targetType) {
     return PlaceTile(row, col, tile, targetType) == PlacementResult::Success;
 }
 
+const std::optional<Tile>& BoardState::GetCell(int row, int col) const {
+    static const std::optional<Tile> kEmptyCell = std::nullopt;
+
+    if (row < 0 || row >= kBoardSize || col < 0 || col >= kBoardSize) {
+        return kEmptyCell;
+    }
+
+    return cells_[row * kBoardSize + col];
+}
+
 }  // namespace TileMatchingGame

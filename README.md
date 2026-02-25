@@ -5,7 +5,7 @@ Visual Studio 2022에서 바로 열고 실행할 수 있는 C++ Win32 프로젝�
 ## 구성
 - `TileMatchingGame.sln`: Visual Studio 2022 솔루션 파일
 - `TileMatchingGame/TileMatchingGame.vcxproj`: C++ 프로젝트 파일 (`v143`, `x64`, `Debug/Release`)
-- `TileMatchingGame/main.cpp`: Win32 진입점 + 간단한 스모크 테스트 실행
+- `TileMatchingGame/main.cpp`: Win32 진입점 + 기본 보드 렌더링/입력 처리
 - `TileMatchingGame/TileDomain.h/.cpp`: 타일 도메인 타입과 공용 헬퍼
 - `TileMatchingGame/BoardState.h/.cpp`: 3x3 보드 상태 관리 클래스
 - `TileMatchingGame/TileSpawner.h/.cpp`: 타일 스폰 클래스
@@ -13,6 +13,8 @@ Visual Studio 2022에서 바로 열고 실행할 수 있는 C++ Win32 프로젝�
 
 ## 현재 구현 범위
 - 객체 지향 구조로 핵심 로직을 클래스 파일로 분리
+- Win32 화면에 플레이어 보드/상태 텍스트 렌더링
+- 타이머 기반 턴 진행 및 마우스 클릭 타일 배치 처리
 - 3x3 보드 상태 관리 (`BoardState`)
 - 레벨 시작 시 플레이어/AI의 서로 다른 목표 타일 할당 (`GameCore::AssignTargets`)
 - 타일 스폰 로직 (`TileSpawner`, `GameCore::SpawnTurnTile`)
@@ -31,6 +33,5 @@ Visual Studio 2022에서 바로 열고 실행할 수 있는 C++ Win32 프로젝�
 3. `F5` (디버깅 시작) 또는 `Ctrl + F5` (디버깅 없이 시작)로 실행합니다.
 
 ## 다음 단계 제안
-- Win32 UI에 보드 렌더링/입력 처리 연결
-- 레벨 선택 화면, 프로필 이미지, 목표 타일 표시 UI 추가
+- 레벨 선택 화면, 프로필 이미지, 목표 타일 표시 UI 개선
 - 승리 시 폭죽/팝업 연출 추가

@@ -16,6 +16,7 @@ public:
     int FirstEmptyIndex() const;
     PlacementResult PlaceTile(int row, int col, const Tile& tile, TileType targetType);
     bool PlaceFirstEmpty(const Tile& tile, TileType targetType);
+    const std::optional<Tile>& GetCell(int row, int col) const;
 
 private:
     std::array<std::optional<Tile>, kBoardCellCount> cells_{};
