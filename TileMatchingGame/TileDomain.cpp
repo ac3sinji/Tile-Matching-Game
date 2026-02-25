@@ -9,19 +9,19 @@ bool IsRegularTile(TileType type) {
 const wchar_t* TileTypeToText(TileType type) {
     switch (type) {
     case TileType::Bamboo:
-        return L"삭수패";
+        return L"\uC0AD\uC218\uD328";
     case TileType::Circle:
-        return L"통수패";
+        return L"\uD1B5\uC218\uD328";
     case TileType::Flag:
-        return L"국기";
+        return L"\uAD6D\uAE30";
     case TileType::Bag:
-        return L"가방";
+        return L"\uAC00\uBC29";
     case TileType::Earring:
-        return L"귀걸이";
+        return L"\uADC0\uAC78\uC774";
     case TileType::Joker:
-        return L"무지개 알";
+        return L"\uBB34\uC9C0\uAC1C \uC54C";
     default:
-        return L"알 수 없음";
+        return L"\uC54C \uC218 \uC5C6\uC74C";
     }
 }
 
