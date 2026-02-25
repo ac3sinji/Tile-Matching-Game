@@ -22,6 +22,8 @@ public:
     std::optional<Tile> GetCurrentSpawnTile() const;
     TileType GetPlayerTargetType() const;
     TileType GetAITargetType() const;
+    const BoardState& GetPlayerBoard() const;
+    const BoardState& GetAIBoard() const;
 
 private:
     void AssignTargets();
