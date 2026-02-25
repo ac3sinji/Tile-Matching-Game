@@ -78,7 +78,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BoardState.cpp" />
+    <ClCompile Include="GameCore.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TileDomain.cpp" />
+    <ClCompile Include="TileSpawner.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BoardState.h" />
+    <ClInclude Include="GameCore.h" />
+    <ClInclude Include="TileDomain.h" />
+    <ClInclude Include="TileSpawner.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
