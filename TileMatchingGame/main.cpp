@@ -1,11 +1,34 @@
 #include <windows.h>
 
+#include "MapSettingPanel.h"
+
 namespace {
 constexpr int kWindowWidth = 1000;
 constexpr int kWindowHeight = 720;
 
+void DestroyMapSettingPanel(HWND hwnd) {
+    auto* panel = reinterpret_cast<MapSettingPanel*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (panel != nullptr) {
+        delete panel;
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, 0);
+    }
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
+    case WM_CREATE: {
+        auto* panel = new MapSettingPanel();
+        panel->Create(hwnd);
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(panel));
+        return 0;
+    }
+    case WM_COMMAND: {
+        auto* panel = reinterpret_cast<MapSettingPanel*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        if (panel != nullptr && panel->HandleCommand(wParam)) {
+            return 0;
+        }
+        break;
+    }
     case WM_ERASEBKGND:
         return 1;
     case WM_PAINT: {
@@ -16,11 +39,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
         return 0;
     }
     case WM_DESTROY:
+        DestroyMapSettingPanel(hwnd);
         PostQuitMessage(0);
         return 0;
     default:
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        break;
     }
+
+    return DefWindowProc(hwnd, message, wParam, lParam);
 }
 } // namespace
 
