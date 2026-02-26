@@ -6,6 +6,7 @@
 
 #include <SDL.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -168,11 +169,17 @@ int AppUI::run() {
         if (mapCount < 1) {
             mapCount = 1;
         }
+        const int mapsVisibleInViewer = isMultiplayerMode ? 2 : 1;
         if (ImGui::Button("Start Making Maps")) {
             generatedMaps.clear();
             generatedMaps = createTileMaps(mapWidth, mapHeight, mapCount);
         }
-        ImGui::Text("Ready to generate %d map(s) with size %d x %d.", mapCount, mapWidth, mapHeight);
+        ImGui::Text(
+            "Ready to generate %d map(s). Viewer shows %d map(s) in %s mode.",
+            mapCount,
+            mapsVisibleInViewer,
+            isMultiplayerMode ? "Multi" : "Single"
+        );
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
@@ -204,7 +211,8 @@ int AppUI::run() {
             constexpr float kTileGap = 4.0f;
             constexpr float kMapGap = 24.0f;
 
-            for (size_t mapIndex = 0; mapIndex < generatedMaps.size(); ++mapIndex) {
+            const size_t visibleMapCount = std::min(generatedMaps.size(), static_cast<size_t>(isMultiplayerMode ? 2 : 1));
+            for (size_t mapIndex = 0; mapIndex < visibleMapCount; ++mapIndex) {
                 const GeneratedMap& map = generatedMaps[mapIndex];
                 ImGui::Text("Tile Map %zu (%d x %d)", mapIndex + 1, map.width, map.height);
                 ImGui::Separator();
@@ -223,7 +231,7 @@ int AppUI::run() {
                     }
                 }
 
-                if (mapIndex + 1 < generatedMaps.size()) {
+                if (mapIndex + 1 < visibleMapCount) {
                     ImGui::Dummy(ImVec2(0.0f, kMapGap));
                 }
             }
