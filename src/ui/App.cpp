@@ -11,16 +11,16 @@
 #include <vector>
 
 namespace {
+static constexpr ImWchar kKoreanRanges[] = {
+    0x0020, 0x00FF,
+    0x3131, 0x3163,
+    0xAC00, 0xD7A3,
+    0,
+};
+
 bool loadKoreanFontWithFallback() {
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
-
-    const ImWchar koreanRanges[] = {
-        0x0020, 0x00FF,
-        0x3131, 0x3163,
-        0xAC00, 0xD7A3,
-        0,
-    };
 
     const std::vector<std::string> candidates = {
 #if defined(_WIN32)
@@ -41,7 +41,7 @@ bool loadKoreanFontWithFallback() {
             continue;
         }
 
-        if (io.Fonts->AddFontFromFileTTF(path.c_str(), 18.0f, nullptr, koreanRanges) != nullptr) {
+        if (io.Fonts->AddFontFromFileTTF(path.c_str(), 18.0f, nullptr, kKoreanRanges) != nullptr) {
             return true;
         }
     }
