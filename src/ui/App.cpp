@@ -300,15 +300,23 @@ int AppUI::run() {
             ImGui::Separator();
 
             auto drawMapPanel = [&](const GeneratedMap& map, int mapNumberInStage) {
-                ImGui::Text("Stage %d - Map %d", currentStageIndex + 1, mapNumberInStage);
+                const int displayedMapNumber = (mapNumberInStage == 2)
+                    ? mapNumberInStage + 100
+                    : mapNumberInStage;
+
+                ImGui::Text("Stage %d - Map %d", currentStageIndex + 1, displayedMapNumber);
                 ImGui::Text("Tile Map (%d x %d)", map.width, map.height);
                 ImGui::Separator();
 
                 for (int row = 0; row < map.height; ++row) {
                     for (int col = 0; col < map.width; ++col) {
                         const int tileIndex = row * map.width + col;
+                        const int displayedTileNumber = (mapNumberInStage == 2)
+                            ? map.tiles[tileIndex] + 100
+                            : map.tiles[tileIndex];
+
                         ImGui::PushID((currentStageIndex * 1000000) + (mapNumberInStage * 100000) + tileIndex);
-                        const std::string tileLabel = std::to_string(map.tiles[tileIndex]);
+                        const std::string tileLabel = std::to_string(displayedTileNumber);
                         ImGui::Button(tileLabel.c_str(), ImVec2(kTileSize, kTileSize));
                         ImGui::PopID();
 
