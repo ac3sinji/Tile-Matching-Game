@@ -182,9 +182,9 @@ int AppUI::run() {
         ImGui::NewFrame();
 
         ImGui::Begin("Control Panel");
-        ImGui::TextUnformatted("Make Map");
+        ImGui::TextUnformatted("Stage Map Count");
         ImGui::Separator();
-        ImGui::InputInt("Map Count", &mapCount);
+        ImGui::InputInt("Maps to Generate for Stage", &mapCount);
         if (mapCount < 1) {
             mapCount = 1;
         }
