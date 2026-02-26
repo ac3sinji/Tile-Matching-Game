@@ -300,7 +300,11 @@ int AppUI::run() {
             ImGui::Separator();
 
             auto drawMapPanel = [&](const GeneratedMap& map, int mapNumberInStage) {
-                ImGui::Text("Stage %d - Map %d", currentStageIndex + 1, mapNumberInStage);
+                const int displayedMapNumber = (mapNumberInStage == 2)
+                    ? mapNumberInStage + 100
+                    : mapNumberInStage;
+
+                ImGui::Text("Stage %d - Map %d", currentStageIndex + 1, displayedMapNumber);
                 ImGui::Text("Tile Map (%d x %d)", map.width, map.height);
                 ImGui::Separator();
 
