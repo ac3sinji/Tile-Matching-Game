@@ -54,7 +54,9 @@ bool loadKoreanFontWithFallback() {
 int AppUI::run() {
     int mapWidth = 3;
     int mapHeight = 2;
+    int mapCount = 1;
     bool isMultiplayerMode = false;
+    bool generationRequested = false;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -131,8 +133,19 @@ int AppUI::run() {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Controls");
-        ImGui::TextUnformatted("Control panel area");
+        ImGui::Begin("Control Panel");
+        ImGui::TextUnformatted("Make Map");
+        ImGui::Separator();
+        ImGui::InputInt("Map Count", &mapCount);
+        if (mapCount < 1) {
+            mapCount = 1;
+        }
+        if (ImGui::Button("Start Making Maps")) {
+            generationRequested = true;
+        }
+        if (generationRequested) {
+            ImGui::Text("Generating %d map(s)...", mapCount);
+        }
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
