@@ -106,27 +106,6 @@ std::vector<StageData> createStages(
     return stages;
 }
 
-void syncStageMapCountToMode(
-    std::vector<StageData>& stages,
-    int mapWidth,
-    int mapHeight,
-    bool isMultiplayerMode
-) {
-    const int mapCountPerStage = getMapCountPerStage(isMultiplayerMode);
-
-    for (StageData& stage : stages) {
-        if (static_cast<int>(stage.maps.size()) > mapCountPerStage) {
-            stage.maps.resize(mapCountPerStage);
-            continue;
-        }
-
-        if (static_cast<int>(stage.maps.size()) < mapCountPerStage) {
-            const int missingMapCount = mapCountPerStage - static_cast<int>(stage.maps.size());
-            std::vector<GeneratedMap> additionalMaps = createMapsForStage(mapWidth, mapHeight, missingMapCount);
-            stage.maps.insert(stage.maps.end(), additionalMaps.begin(), additionalMaps.end());
-        }
-    }
-}
 } // namespace
 
 int AppUI::run() {
@@ -270,8 +249,6 @@ int AppUI::run() {
         const bool previousMultiplayerMode = isMultiplayerMode;
         ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
         if (previousMultiplayerMode != isMultiplayerMode) {
-            syncStageMapCountToMode(generatedStages, mapWidth, mapHeight, isMultiplayerMode);
-
             if (!generatedStages.empty()) {
                 currentStageIndex = std::clamp(currentStageIndex, 0, static_cast<int>(generatedStages.size()) - 1);
             } else {
@@ -281,8 +258,8 @@ int AppUI::run() {
             generationLogs.push_back(
                 "[INFO] Mode switched to " +
                 std::string(isMultiplayerMode ? "Multi" : "Single") +
-                ". Each stage now has " + std::to_string(getMapCountPerStage(isMultiplayerMode)) +
-                " map(s)."
+                ". Existing stages are unchanged. Press 'Start Making Stages' to regenerate with " +
+                std::to_string(getMapCountPerStage(isMultiplayerMode)) + " map(s) per stage."
             );
         }
 
