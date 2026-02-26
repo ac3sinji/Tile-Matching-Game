@@ -79,23 +79,32 @@ std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCou
     return maps;
 }
 
-void ensureMinimumMapCountForMultiplayer(
+int getRequiredMapCountPerStage(bool isMultiplayerMode) {
+    return isMultiplayerMode ? 2 : 1;
+}
+
+void syncMapCountToMode(
     std::vector<GeneratedMap>& maps,
     int mapWidth,
-    int mapHeight
+    int mapHeight,
+    bool isMultiplayerMode
 ) {
-    if (maps.size() >= 2) {
+    const int requiredMapCount = getRequiredMapCountPerStage(isMultiplayerMode);
+
+    if (static_cast<int>(maps.size()) > requiredMapCount) {
+        maps.resize(requiredMapCount);
         return;
     }
 
-    const int missingMapCount = 2 - static_cast<int>(maps.size());
-    std::vector<GeneratedMap> additionalMaps = createTileMaps(mapWidth, mapHeight, missingMapCount);
-    maps.insert(maps.end(), additionalMaps.begin(), additionalMaps.end());
+    if (static_cast<int>(maps.size()) < requiredMapCount) {
+        const int missingMapCount = requiredMapCount - static_cast<int>(maps.size());
+        std::vector<GeneratedMap> additionalMaps = createTileMaps(mapWidth, mapHeight, missingMapCount);
+        maps.insert(maps.end(), additionalMaps.begin(), additionalMaps.end());
+    }
 }
 } // namespace
 
 int AppUI::run() {
-    int mapCount = 1;
     int mapWidth = 3;
     int mapHeight = 2;
     bool isMultiplayerMode = false;
@@ -184,19 +193,17 @@ int AppUI::run() {
         ImGui::Begin("Control Panel");
         ImGui::TextUnformatted("Stage Map Count");
         ImGui::Separator();
-        ImGui::InputInt("Maps to Generate for Stage", &mapCount);
-        if (mapCount < 1) {
-            mapCount = 1;
-        }
-        const int mapsVisibleInViewer = isMultiplayerMode ? 2 : 1;
+        const int mapsVisibleInViewer = getRequiredMapCountPerStage(isMultiplayerMode);
+        ImGui::Text(
+            "Single mode generates 1 map per stage. Multi mode generates 2 maps per stage."
+        );
         if (ImGui::Button("Start Making Maps")) {
             generationLogs.clear();
-            generationLogs.push_back("[INFO] Generating " + std::to_string(mapCount) + " map(s)...");
+            generationLogs.push_back(
+                "[INFO] Generating " + std::to_string(mapsVisibleInViewer) + " map(s)..."
+            );
             generatedMaps.clear();
-            generatedMaps = createTileMaps(mapWidth, mapHeight, mapCount);
-            if (isMultiplayerMode) {
-                ensureMinimumMapCountForMultiplayer(generatedMaps, mapWidth, mapHeight);
-            }
+            generatedMaps = createTileMaps(mapWidth, mapHeight, mapsVisibleInViewer);
             currentMapIndex = 0;
             generationLogs.push_back("[INFO] Done.");
             generationLogs.push_back(
@@ -205,8 +212,7 @@ int AppUI::run() {
             );
         }
         ImGui::Text(
-            "Ready to generate %d map(s). Viewer shows %d map(s) in %s mode.",
-            mapCount,
+            "Ready to generate %d map(s) for this stage in %s mode.",
             mapsVisibleInViewer,
             isMultiplayerMode ? "Multi" : "Single"
         );
@@ -225,9 +231,7 @@ int AppUI::run() {
         const bool previousMultiplayerMode = isMultiplayerMode;
         ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
         if (previousMultiplayerMode != isMultiplayerMode) {
-            if (isMultiplayerMode) {
-                ensureMinimumMapCountForMultiplayer(generatedMaps, mapWidth, mapHeight);
-            }
+            syncMapCountToMode(generatedMaps, mapWidth, mapHeight, isMultiplayerMode);
 
             if (!generatedMaps.empty()) {
                 currentMapIndex = std::clamp(currentMapIndex, 0, static_cast<int>(generatedMaps.size()) - 1);
