@@ -233,20 +233,39 @@ bool exportStagesToCsv(const std::vector<StageData>& stages, bool isMultiplayerM
         return false;
     }
 
-    csvFile << "stage,width,height,map,\n";
+    if (isMultiplayerMode) {
+        csvFile << "stage,width,height,map1,map2\n";
 
-    for (size_t stageIndex = 0; stageIndex < stages.size(); ++stageIndex) {
-        const StageData& stage = stages[stageIndex];
+        for (size_t stageIndex = 0; stageIndex < stages.size(); ++stageIndex) {
+            const StageData& stage = stages[stageIndex];
+            if (stage.maps.empty()) {
+                continue;
+            }
 
-        for (size_t mapIndex = 0; mapIndex < stage.maps.size(); ++mapIndex) {
-            const GeneratedMap& map = stage.maps[mapIndex];
-            const int stageNumber = static_cast<int>(stageIndex) + 1;
-            const int stageLabel = (mapIndex == 0)
-                ? stageNumber
-                : (stageNumber * 100) + (static_cast<int>(mapIndex) + 1);
+            const GeneratedMap& firstMap = stage.maps[0];
+            const std::string secondMapCsv = (stage.maps.size() >= 2)
+                ? serializeMapForCsv(stage.maps[1])
+                : "";
 
             csvFile
-                << stageLabel << ','
+                << static_cast<int>(stageIndex) + 1 << ','
+                << firstMap.width << ','
+                << firstMap.height << ','
+                << serializeMapForCsv(firstMap) << ','
+                << secondMapCsv << '\n';
+        }
+    } else {
+        csvFile << "stage,width,height,map\n";
+
+        for (size_t stageIndex = 0; stageIndex < stages.size(); ++stageIndex) {
+            const StageData& stage = stages[stageIndex];
+            if (stage.maps.empty()) {
+                continue;
+            }
+
+            const GeneratedMap& map = stage.maps[0];
+            csvFile
+                << static_cast<int>(stageIndex) + 1 << ','
                 << map.width << ','
                 << map.height << ','
                 << serializeMapForCsv(map) << '\n';
