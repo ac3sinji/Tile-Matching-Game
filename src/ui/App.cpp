@@ -352,6 +352,7 @@ int AppUI::run() {
     std::vector<StageData> generatedStages;
     int currentStageIndex = 0;
     std::string exportTitle;
+    bool autoMapEnabled = false;
     std::vector<std::string> generationLogs = {
         "[INFO] Ready.",
         "[INFO] Waiting for generation tasks..."
@@ -550,6 +551,45 @@ int AppUI::run() {
                     generationLogs.push_back("[INFO] Stage CSV exported to '" + outputCsvPath + "'.");
                 } else {
                     generationLogs.push_back("[ERROR] Failed to export stage CSV file.");
+                }
+            }
+        }
+
+        ImGui::Separator();
+        ImGui::TextUnformatted("Auto Map");
+        ImGui::Checkbox("Enable Auto Map Session", &autoMapEnabled);
+        if (ImGui::Button("Run Auto Map Session")) {
+            if (!autoMapEnabled) {
+                generationLogs.push_back("[WARN] Auto Map session is disabled. Enable it first.");
+            } else {
+                generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
+                const int invalidMapCount = shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
+                generatedForMultiplayerMode = isMultiplayerMode;
+                currentStageIndex = 0;
+
+                std::string outputCsvPath;
+                const bool csvExported = exportStagesToCsv(
+                    generatedStages,
+                    generatedForMultiplayerMode,
+                    exportTitle,
+                    outputCsvPath
+                );
+
+                generationLogs.push_back(
+                    "[INFO] Auto Map session generated " + std::to_string(stageCount) + " stage(s)."
+                );
+
+                if (invalidMapCount > 0) {
+                    generationLogs.push_back(
+                        "[WARN] " + std::to_string(invalidMapCount) +
+                        " map(s) could not avoid vertically adjacent equal numbers after many retries."
+                    );
+                }
+
+                if (csvExported) {
+                    generationLogs.push_back("[INFO] Auto Map session exported CSV to '" + outputCsvPath + "'.");
+                } else {
+                    generationLogs.push_back("[ERROR] Auto Map session failed to export CSV.");
                 }
             }
         }
