@@ -113,9 +113,46 @@ void shuffleMapTiles(GeneratedMap& map, int shuffleCount, std::mt19937& rng) {
     }
 }
 
-void shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMultiplayerMode) {
+bool hasVerticalMatchingTiles(const GeneratedMap& map) {
+    for (int row = 0; row < map.height; ++row) {
+        for (int col = 0; col < map.width; ++col) {
+            const int tileIndex = (row * map.width) + col;
+            const int currentTile = map.tiles[tileIndex];
+
+            if (row + 1 < map.height) {
+                const int belowTile = map.tiles[tileIndex + map.width];
+                if (currentTile == belowTile) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool shuffleMapTilesAvoidingVerticalMatches(GeneratedMap& map, int shuffleCount, std::mt19937& rng) {
+    static constexpr int kMaxShuffleAttempts = 3000;
+
+    std::vector<int> originalTiles = map.tiles;
+    for (int attempt = 0; attempt < kMaxShuffleAttempts; ++attempt) {
+        map.tiles = originalTiles;
+        shuffleMapTiles(map, shuffleCount, rng);
+
+        if (!hasVerticalMatchingTiles(map)) {
+            return true;
+        }
+    }
+
+    map.tiles = std::move(originalTiles);
+    shuffleMapTiles(map, shuffleCount, rng);
+    return false;
+}
+
+int shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMultiplayerMode) {
     std::random_device rd;
     std::mt19937 rng(rd());
+    int invalidMapCount = 0;
 
     for (StageData& stage : stages) {
         if (stage.maps.empty()) {
@@ -124,13 +161,19 @@ void shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isM
 
         if (isMultiplayerMode) {
             for (GeneratedMap& map : stage.maps) {
-                shuffleMapTiles(map, shuffleCount, rng);
+                if (!shuffleMapTilesAvoidingVerticalMatches(map, shuffleCount, rng)) {
+                    ++invalidMapCount;
+                }
             }
             continue;
         }
 
-        shuffleMapTiles(stage.maps[0], shuffleCount, rng);
+        if (!shuffleMapTilesAvoidingVerticalMatches(stage.maps[0], shuffleCount, rng)) {
+            ++invalidMapCount;
+        }
     }
+
+    return invalidMapCount;
 }
 
 } // namespace
@@ -256,7 +299,7 @@ int AppUI::run() {
             );
 
             generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
-            shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
+            const int invalidMapCount = shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
             generatedForMultiplayerMode = isMultiplayerMode;
             currentStageIndex = 0;
 
@@ -270,6 +313,13 @@ int AppUI::run() {
                 std::string(isMultiplayerMode ? "all maps" : "single map per stage") +
                 " " + std::to_string(shuffleCount) + " time(s)."
             );
+
+            if (invalidMapCount > 0) {
+                generationLogs.push_back(
+                    "[WARN] " + std::to_string(invalidMapCount) +
+                    " map(s) could not avoid vertically adjacent equal numbers after many retries."
+                );
+            }
         }
 
         ImGui::Text(
