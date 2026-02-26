@@ -131,6 +131,16 @@ bool hasVerticalMatchingTiles(const GeneratedMap& map) {
     return false;
 }
 
+bool hasVerticalMatchingTilesInAnyMap(const StageData& stage) {
+    for (const GeneratedMap& map : stage.maps) {
+        if (hasVerticalMatchingTiles(map)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool shuffleMapTilesAvoidingVerticalMatches(GeneratedMap& map, int shuffleCount, std::mt19937& rng) {
     static constexpr int kMaxShuffleAttempts = 3000;
 
@@ -149,6 +159,46 @@ bool shuffleMapTilesAvoidingVerticalMatches(GeneratedMap& map, int shuffleCount,
     return false;
 }
 
+bool shuffleMultiplayerTileNumbersAcrossMapsAvoidingVerticalMatches(
+    StageData& stage,
+    int shuffleCount,
+    std::mt19937& rng
+) {
+    static constexpr int kMaxShuffleAttempts = 3000;
+
+    if (stage.maps.size() < 2) {
+        return !hasVerticalMatchingTilesInAnyMap(stage);
+    }
+
+    std::vector<int> originalNumbers;
+    for (size_t mapIndex = 0; mapIndex < stage.maps.size(); ++mapIndex) {
+        const int mapOffset = static_cast<int>(mapIndex) * 100;
+        for (const int tile : stage.maps[mapIndex].tiles) {
+            originalNumbers.push_back(tile + mapOffset);
+        }
+    }
+
+    for (int attempt = 0; attempt < kMaxShuffleAttempts; ++attempt) {
+        std::vector<int> shuffledNumbers = originalNumbers;
+        for (int shuffleIndex = 0; shuffleIndex < shuffleCount; ++shuffleIndex) {
+            std::shuffle(shuffledNumbers.begin(), shuffledNumbers.end(), rng);
+        }
+
+        size_t poolIndex = 0;
+        for (GeneratedMap& map : stage.maps) {
+            for (int& tile : map.tiles) {
+                tile = shuffledNumbers[poolIndex++];
+            }
+        }
+
+        if (!hasVerticalMatchingTilesInAnyMap(stage)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMultiplayerMode) {
     std::random_device rd;
     std::mt19937 rng(rd());
@@ -161,9 +211,11 @@ int shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMu
 
         if (isMultiplayerMode) {
             for (GeneratedMap& map : stage.maps) {
-                if (!shuffleMapTilesAvoidingVerticalMatches(map, shuffleCount, rng)) {
-                    ++invalidMapCount;
-                }
+                shuffleMapTiles(map, shuffleCount, rng);
+            }
+
+            if (!shuffleMultiplayerTileNumbersAcrossMapsAvoidingVerticalMatches(stage, shuffleCount, rng)) {
+                ++invalidMapCount;
             }
             continue;
         }
@@ -405,9 +457,7 @@ int AppUI::run() {
                 for (int row = 0; row < map.height; ++row) {
                     for (int col = 0; col < map.width; ++col) {
                         const int tileIndex = row * map.width + col;
-                        const int displayedTileNumber = (mapNumberInStage == 2)
-                            ? map.tiles[tileIndex] + 100
-                            : map.tiles[tileIndex];
+                        const int displayedTileNumber = map.tiles[tileIndex];
 
                         ImGui::PushID((currentStageIndex * 1000000) + (mapNumberInStage * 100000) + tileIndex);
                         const std::string tileLabel = std::to_string(displayedTileNumber);
