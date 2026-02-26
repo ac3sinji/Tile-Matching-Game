@@ -566,12 +566,12 @@ int AppUI::run() {
         }
 
         ImGui::Separator();
-        ImGui::TextUnformatted("Auto Map");
-        ImGui::Checkbox("Enable Auto Map Session", &autoMapEnabled);
-        ImGui::TextUnformatted("Auto Map shuffle count is randomized between 20 and 100000.");
-        if (ImGui::Button("Run Auto Map Session")) {
+        ImGui::TextUnformatted("Create Map");
+        ImGui::Checkbox("Enable Create Map Session", &autoMapEnabled);
+        ImGui::TextUnformatted("Create Map shuffle count is randomized between 20 and 100000.");
+        if (ImGui::Button("Run Create Map Session")) {
             if (!autoMapEnabled) {
-                generationLogs.push_back("[WARN] Auto Map session is disabled. Enable it first.");
+                generationLogs.push_back("[WARN] Create Map session is disabled. Enable it first.");
             } else {
                 const int autoMapShuffleCount = generateAutoMapShuffleCount();
                 generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
@@ -588,10 +588,10 @@ int AppUI::run() {
                 );
 
                 generationLogs.push_back(
-                    "[INFO] Auto Map session generated " + std::to_string(stageCount) + " stage(s)."
+                    "[INFO] Create Map session generated " + std::to_string(stageCount) + " stage(s)."
                 );
                 generationLogs.push_back(
-                    "[INFO] Auto Map session randomized shuffle count to " +
+                    "[INFO] Create Map session randomized shuffle count to " +
                     std::to_string(autoMapShuffleCount) + "."
                 );
 
@@ -603,9 +603,9 @@ int AppUI::run() {
                 }
 
                 if (csvExported) {
-                    generationLogs.push_back("[INFO] Auto Map session exported CSV to '" + outputCsvPath + "'.");
+                    generationLogs.push_back("[INFO] Create Map session exported CSV to '" + outputCsvPath + "'.");
                 } else {
-                    generationLogs.push_back("[ERROR] Auto Map session failed to export CSV.");
+                    generationLogs.push_back("[ERROR] Create Map session failed to export CSV.");
                 }
             }
         }
