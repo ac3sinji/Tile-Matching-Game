@@ -82,6 +82,7 @@ std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCou
 int AppUI::run() {
     int mapWidth = 3;
     int mapHeight = 2;
+    int mapCount = 1;
     bool isMultiplayerMode = false;
     std::vector<GeneratedMap> generatedMaps;
 
@@ -163,13 +164,15 @@ int AppUI::run() {
         ImGui::Begin("Control Panel");
         ImGui::TextUnformatted("Make Map");
         ImGui::Separator();
-        const int currentMapCount = isMultiplayerMode ? 2 : 1;
-        ImGui::Text("Map Count: %d", currentMapCount);
+        ImGui::InputInt("Map Count", &mapCount);
+        if (mapCount < 1) {
+            mapCount = 1;
+        }
         if (ImGui::Button("Start Making Maps")) {
             generatedMaps.clear();
-            generatedMaps = createTileMaps(mapWidth, mapHeight, currentMapCount);
+            generatedMaps = createTileMaps(mapWidth, mapHeight, mapCount);
         }
-        ImGui::Text("Ready to generate %d map(s) with size %d x %d.", currentMapCount, mapWidth, mapHeight);
+        ImGui::Text("Ready to generate %d map(s) with size %d x %d.", mapCount, mapWidth, mapHeight);
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
