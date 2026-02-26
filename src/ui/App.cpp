@@ -52,8 +52,9 @@ bool loadKoreanFontWithFallback() {
 } // namespace
 
 int AppUI::run() {
-    int mapWidth = 8;
-    int mapHeight = 8;
+    int mapWidth = 3;
+    int mapHeight = 2;
+    bool isMultiplayerMode = false;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -136,6 +137,10 @@ int AppUI::run() {
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
         ImGui::InputInt("Height", &mapHeight);
+        ImGui::Separator();
+        ImGui::TextUnformatted("Mode");
+        ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
+        ImGui::TextUnformatted(isMultiplayerMode ? "Current: Multi Mode" : "Current: Single Mode");
         ImGui::Separator();
         ImGui::Text("Korean font loaded: %s", koreanFontLoaded ? "Yes" : "No (fallback)");
         ImGui::End();
