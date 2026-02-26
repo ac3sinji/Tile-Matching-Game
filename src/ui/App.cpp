@@ -465,46 +465,6 @@ int AppUI::run() {
             isMultiplayerMode ? "Multi" : "Single"
         );
 
-        if (ImGui::Button("Start Making Stages")) {
-            generationLogs.clear();
-            generationLogs.push_back(
-                "[INFO] Generating " + std::to_string(stageCount) + " stage(s)..."
-            );
-            generationLogs.push_back(
-                "[INFO] Shuffle count set to " + std::to_string(shuffleCount) + "."
-            );
-
-            generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
-            const int invalidMapCount = shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
-            generatedForMultiplayerMode = isMultiplayerMode;
-            currentStageIndex = 0;
-
-            generationLogs.push_back("[INFO] Done.");
-            generationLogs.push_back(
-                "[INFO] Created " + std::to_string(stageCount) +
-                " stage(s), each with " + std::to_string(mapCountPerStage) + " map(s)."
-            );
-            generationLogs.push_back(
-                "[INFO] Shuffled " +
-                std::string(isMultiplayerMode ? "all maps" : "single map per stage") +
-                " " + std::to_string(shuffleCount) + " time(s)."
-            );
-
-            if (invalidMapCount > 0) {
-                generationLogs.push_back(
-                    "[WARN] " + std::to_string(invalidMapCount) +
-                    " map(s) could not avoid vertically adjacent equal numbers after many retries."
-                );
-            }
-        }
-
-        ImGui::Text(
-            "Ready to generate %d stage(s). Current mode: %s (%d map(s) per stage).",
-            stageCount,
-            isMultiplayerMode ? "Multi" : "Single",
-            mapCountPerStage
-        );
-
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
@@ -567,6 +527,44 @@ int AppUI::run() {
 
         ImGui::Separator();
         ImGui::TextUnformatted("Create Map");
+        if (ImGui::Button("Start Making Stages")) {
+            generationLogs.clear();
+            generationLogs.push_back(
+                "[INFO] Generating " + std::to_string(stageCount) + " stage(s)..."
+            );
+            generationLogs.push_back(
+                "[INFO] Shuffle count set to " + std::to_string(shuffleCount) + "."
+            );
+
+            generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
+            const int invalidMapCount = shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
+            generatedForMultiplayerMode = isMultiplayerMode;
+            currentStageIndex = 0;
+
+            generationLogs.push_back("[INFO] Done.");
+            generationLogs.push_back(
+                "[INFO] Created " + std::to_string(stageCount) +
+                " stage(s), each with " + std::to_string(mapCountPerStage) + " map(s)."
+            );
+            generationLogs.push_back(
+                "[INFO] Shuffled " +
+                std::string(isMultiplayerMode ? "all maps" : "single map per stage") +
+                " " + std::to_string(shuffleCount) + " time(s)."
+            );
+
+            if (invalidMapCount > 0) {
+                generationLogs.push_back(
+                    "[WARN] " + std::to_string(invalidMapCount) +
+                    " map(s) could not avoid vertically adjacent equal numbers after many retries."
+                );
+            }
+        }
+        ImGui::Text(
+            "Ready to generate %d stage(s). Current mode: %s (%d map(s) per stage).",
+            stageCount,
+            isMultiplayerMode ? "Multi" : "Single",
+            mapCountPerStage
+        );
         ImGui::Checkbox("Enable Create Map Session", &autoMapEnabled);
         ImGui::TextUnformatted("Create Map shuffle count is randomized between 20 and 100000.");
         if (ImGui::Button("Run Create Map Session")) {
