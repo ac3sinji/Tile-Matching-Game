@@ -272,12 +272,12 @@ int AppUI::run() {
             if (isMultiplayerMode) {
                 const int rightIndex = currentMapIndex + 1;
                 if (rightIndex < static_cast<int>(generatedMaps.size())) {
-                    ImGui::Text("Maps %d & %d / %zu", currentMapIndex + 1, rightIndex + 1, generatedMaps.size());
+                    ImGui::Text("Stages %d & %d / %zu", currentMapIndex + 1, rightIndex + 1, generatedMaps.size());
                 } else {
-                    ImGui::Text("Maps %d & No Map / %zu", currentMapIndex + 1, generatedMaps.size());
+                    ImGui::Text("Stage %d & No Stage / %zu", currentMapIndex + 1, generatedMaps.size());
                 }
             } else {
-                ImGui::Text("Map %d / %zu", currentMapIndex + 1, generatedMaps.size());
+                ImGui::Text("Stage %d / %zu", currentMapIndex + 1, generatedMaps.size());
             }
 
             ImGui::Separator();
@@ -295,7 +295,8 @@ int AppUI::run() {
                 }
 
                 const GeneratedMap& map = generatedMaps[mapIndex];
-                ImGui::Text("Tile Map %d (%d x %d)", mapIndex + 1, map.width, map.height);
+                ImGui::Text("Stage %d", mapIndex + 1);
+                ImGui::Text("Tile Map (%d x %d)", map.width, map.height);
                 ImGui::Separator();
 
                 for (int row = 0; row < map.height; ++row) {
