@@ -57,6 +57,8 @@ int AppUI::run() {
     int mapCount = 1;
     bool isMultiplayerMode = false;
     bool generationRequested = false;
+    int generatedMapWidth = 0;
+    int generatedMapHeight = 0;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -142,14 +144,27 @@ int AppUI::run() {
         }
         if (ImGui::Button("Start Making Maps")) {
             generationRequested = true;
+            generatedMapWidth = mapWidth;
+            generatedMapHeight = mapHeight;
         }
         if (generationRequested) {
-            ImGui::Text("Generating %d map(s)...", mapCount);
+            ImGui::Text(
+                "Generating %d map(s) with size %d x %d...",
+                mapCount,
+                generatedMapWidth,
+                generatedMapHeight
+            );
         }
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
         ImGui::InputInt("Height", &mapHeight);
+        if (mapWidth < 1) {
+            mapWidth = 1;
+        }
+        if (mapHeight < 1) {
+            mapHeight = 1;
+        }
         ImGui::Separator();
         ImGui::TextUnformatted("Mode");
         ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
@@ -164,7 +179,27 @@ int AppUI::run() {
         ImGui::End();
 
         ImGui::Begin("Viewer");
-        ImGui::TextUnformatted("Viewer panel");
+        if (!generationRequested) {
+            ImGui::TextUnformatted("Press 'Start Making Maps' to create a tile map.");
+        } else {
+            ImGui::Text("Tile Map Preview (%d x %d)", generatedMapWidth, generatedMapHeight);
+            ImGui::Separator();
+
+            constexpr float kTileSize = 28.0f;
+            constexpr float kTileGap = 4.0f;
+
+            for (int row = 0; row < generatedMapHeight; ++row) {
+                for (int col = 0; col < generatedMapWidth; ++col) {
+                    ImGui::PushID(row * generatedMapWidth + col);
+                    ImGui::Button("##tile", ImVec2(kTileSize, kTileSize));
+                    ImGui::PopID();
+
+                    if (col + 1 < generatedMapWidth) {
+                        ImGui::SameLine(0.0f, kTileGap);
+                    }
+                }
+            }
+        }
         ImGui::End();
 
         ImGui::Render();
