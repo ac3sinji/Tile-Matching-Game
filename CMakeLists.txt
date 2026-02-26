@@ -41,17 +41,10 @@ target_include_directories(imgui_lib PUBLIC
 
 target_link_libraries(imgui_lib PUBLIC SDL2::SDL2-static)
 
-if (WIN32)
-  add_executable(tile_matching_ui WIN32
-    src/main.cpp
-    src/ui/App.cpp
-  )
-else()
-  add_executable(tile_matching_ui
-    src/main.cpp
-    src/ui/App.cpp
-  )
-endif()
+add_executable(tile_matching_ui
+  src/main.cpp
+  src/ui/App.cpp
+)
 
 target_include_directories(tile_matching_ui PRIVATE src)
 target_link_libraries(tile_matching_ui PRIVATE imgui_lib SDL2::SDL2-static)
