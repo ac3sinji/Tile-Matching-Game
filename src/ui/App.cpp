@@ -340,6 +340,16 @@ int shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMu
     return invalidMapCount;
 }
 
+int generateAutoMapShuffleCount() {
+    static constexpr int kAutoMapMinShuffleCount = 20;
+    static constexpr int kAutoMapMaxShuffleCount = 100000;
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::uniform_int_distribution<int> distribution(kAutoMapMinShuffleCount, kAutoMapMaxShuffleCount);
+    return distribution(rng);
+}
+
 } // namespace
 
 int AppUI::run() {
@@ -558,12 +568,14 @@ int AppUI::run() {
         ImGui::Separator();
         ImGui::TextUnformatted("Auto Map");
         ImGui::Checkbox("Enable Auto Map Session", &autoMapEnabled);
+        ImGui::TextUnformatted("Auto Map shuffle count is randomized between 20 and 100000.");
         if (ImGui::Button("Run Auto Map Session")) {
             if (!autoMapEnabled) {
                 generationLogs.push_back("[WARN] Auto Map session is disabled. Enable it first.");
             } else {
+                const int autoMapShuffleCount = generateAutoMapShuffleCount();
                 generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
-                const int invalidMapCount = shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
+                const int invalidMapCount = shuffleStageMaps(generatedStages, autoMapShuffleCount, isMultiplayerMode);
                 generatedForMultiplayerMode = isMultiplayerMode;
                 currentStageIndex = 0;
 
@@ -577,6 +589,10 @@ int AppUI::run() {
 
                 generationLogs.push_back(
                     "[INFO] Auto Map session generated " + std::to_string(stageCount) + " stage(s)."
+                );
+                generationLogs.push_back(
+                    "[INFO] Auto Map session randomized shuffle count to " +
+                    std::to_string(autoMapShuffleCount) + "."
                 );
 
                 if (invalidMapCount > 0) {
