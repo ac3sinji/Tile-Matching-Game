@@ -78,6 +78,20 @@ std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCou
 
     return maps;
 }
+
+void ensureMinimumMapCountForMultiplayer(
+    std::vector<GeneratedMap>& maps,
+    int mapWidth,
+    int mapHeight
+) {
+    if (maps.size() >= 2) {
+        return;
+    }
+
+    const int missingMapCount = 2 - static_cast<int>(maps.size());
+    std::vector<GeneratedMap> additionalMaps = createTileMaps(mapWidth, mapHeight, missingMapCount);
+    maps.insert(maps.end(), additionalMaps.begin(), additionalMaps.end());
+}
 } // namespace
 
 int AppUI::run() {
@@ -180,6 +194,9 @@ int AppUI::run() {
             generationLogs.push_back("[INFO] Generating " + std::to_string(mapCount) + " map(s)...");
             generatedMaps.clear();
             generatedMaps = createTileMaps(mapWidth, mapHeight, mapCount);
+            if (isMultiplayerMode) {
+                ensureMinimumMapCountForMultiplayer(generatedMaps, mapWidth, mapHeight);
+            }
             currentMapIndex = 0;
             generationLogs.push_back("[INFO] Done.");
             generationLogs.push_back(
@@ -208,6 +225,10 @@ int AppUI::run() {
         const bool previousMultiplayerMode = isMultiplayerMode;
         ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
         if (previousMultiplayerMode != isMultiplayerMode) {
+            if (isMultiplayerMode) {
+                ensureMinimumMapCountForMultiplayer(generatedMaps, mapWidth, mapHeight);
+            }
+
             if (!generatedMaps.empty()) {
                 currentMapIndex = std::clamp(currentMapIndex, 0, static_cast<int>(generatedMaps.size()) - 1);
             } else {
