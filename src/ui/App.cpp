@@ -83,7 +83,6 @@ std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCou
 int AppUI::run() {
     int mapWidth = 3;
     int mapHeight = 2;
-    int mapCount = 1;
     bool isMultiplayerMode = false;
     std::vector<GeneratedMap> generatedMaps;
 
