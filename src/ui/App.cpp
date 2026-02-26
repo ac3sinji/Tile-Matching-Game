@@ -52,6 +52,9 @@ bool loadKoreanFontWithFallback() {
 } // namespace
 
 int AppUI::run() {
+    int mapWidth = 8;
+    int mapHeight = 8;
+
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
         return 1;
@@ -129,6 +132,10 @@ int AppUI::run() {
 
         ImGui::Begin("Controls");
         ImGui::TextUnformatted("Control panel area");
+        ImGui::Separator();
+        ImGui::TextUnformatted("Map Size");
+        ImGui::InputInt("Width", &mapWidth);
+        ImGui::InputInt("Height", &mapHeight);
         ImGui::Separator();
         ImGui::Text("Korean font loaded: %s", koreanFontLoaded ? "Yes" : "No (fallback)");
         ImGui::End();
