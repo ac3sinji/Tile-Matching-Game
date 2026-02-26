@@ -7,6 +7,7 @@
 #include <SDL.h>
 
 #include <filesystem>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -49,16 +50,42 @@ bool loadKoreanFontWithFallback() {
     io.Fonts->AddFontDefault();
     return false;
 }
+
+struct GeneratedMap {
+    int width = 0;
+    int height = 0;
+    std::vector<int> tiles;
+};
+
+std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCount) {
+    std::vector<GeneratedMap> maps;
+    maps.reserve(mapCount);
+
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> tileValue(1, 9);
+
+    for (int mapIndex = 0; mapIndex < mapCount; ++mapIndex) {
+        GeneratedMap map;
+        map.width = mapWidth;
+        map.height = mapHeight;
+        map.tiles.reserve(mapWidth * mapHeight);
+
+        for (int i = 0; i < mapWidth * mapHeight; ++i) {
+            map.tiles.push_back(tileValue(rng));
+        }
+
+        maps.push_back(std::move(map));
+    }
+
+    return maps;
+}
 } // namespace
 
 int AppUI::run() {
     int mapWidth = 3;
     int mapHeight = 2;
-    int mapCount = 1;
     bool isMultiplayerMode = false;
-    bool generationRequested = false;
-    int generatedMapWidth = 0;
-    int generatedMapHeight = 0;
+    std::vector<GeneratedMap> generatedMaps;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -138,23 +165,13 @@ int AppUI::run() {
         ImGui::Begin("Control Panel");
         ImGui::TextUnformatted("Make Map");
         ImGui::Separator();
-        ImGui::InputInt("Map Count", &mapCount);
-        if (mapCount < 1) {
-            mapCount = 1;
-        }
+        const int currentMapCount = isMultiplayerMode ? 2 : 1;
+        ImGui::Text("Map Count: %d", currentMapCount);
         if (ImGui::Button("Start Making Maps")) {
-            generationRequested = true;
-            generatedMapWidth = mapWidth;
-            generatedMapHeight = mapHeight;
+            generatedMaps.clear();
+            generatedMaps = createTileMaps(mapWidth, mapHeight, currentMapCount);
         }
-        if (generationRequested) {
-            ImGui::Text(
-                "Generating %d map(s) with size %d x %d...",
-                mapCount,
-                generatedMapWidth,
-                generatedMapHeight
-            );
-        }
+        ImGui::Text("Ready to generate %d map(s) with size %d x %d.", currentMapCount, mapWidth, mapHeight);
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
@@ -179,25 +196,34 @@ int AppUI::run() {
         ImGui::End();
 
         ImGui::Begin("Viewer");
-        if (!generationRequested) {
+        if (generatedMaps.empty()) {
             ImGui::TextUnformatted("Press 'Start Making Maps' to create a tile map.");
         } else {
-            ImGui::Text("Tile Map Preview (%d x %d)", generatedMapWidth, generatedMapHeight);
-            ImGui::Separator();
-
             constexpr float kTileSize = 28.0f;
             constexpr float kTileGap = 4.0f;
+            constexpr float kMapGap = 24.0f;
 
-            for (int row = 0; row < generatedMapHeight; ++row) {
-                for (int col = 0; col < generatedMapWidth; ++col) {
-                    ImGui::PushID(row * generatedMapWidth + col);
-                    const std::string tileLabel = std::to_string(col + 1);
-                    ImGui::Button(tileLabel.c_str(), ImVec2(kTileSize, kTileSize));
-                    ImGui::PopID();
+            for (size_t mapIndex = 0; mapIndex < generatedMaps.size(); ++mapIndex) {
+                const GeneratedMap& map = generatedMaps[mapIndex];
+                ImGui::Text("Tile Map %zu (%d x %d)", mapIndex + 1, map.width, map.height);
+                ImGui::Separator();
 
-                    if (col + 1 < generatedMapWidth) {
-                        ImGui::SameLine(0.0f, kTileGap);
+                for (int row = 0; row < map.height; ++row) {
+                    for (int col = 0; col < map.width; ++col) {
+                        const int tileIndex = row * map.width + col;
+                        ImGui::PushID(static_cast<int>((mapIndex * 100000) + tileIndex));
+                        const std::string tileLabel = std::to_string(map.tiles[tileIndex]);
+                        ImGui::Button(tileLabel.c_str(), ImVec2(kTileSize, kTileSize));
+                        ImGui::PopID();
+
+                        if (col + 1 < map.width) {
+                            ImGui::SameLine(0.0f, kTileGap);
+                        }
                     }
+                }
+
+                if (mapIndex + 1 < generatedMaps.size()) {
+                    ImGui::Dummy(ImVec2(0.0f, kMapGap));
                 }
             }
         }
