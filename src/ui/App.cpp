@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <random>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -204,6 +205,27 @@ std::string getStageCsvFileName(bool isMultiplayerMode) {
     return isMultiplayerMode ? "stages_multi_mode.csv" : "stages_single_mode.csv";
 }
 
+std::string serializeMapForCsv(const GeneratedMap& map) {
+    std::ostringstream serializedMap;
+
+    for (int col = 0; col < map.width; ++col) {
+        if (col > 0) {
+            serializedMap << '^';
+        }
+
+        for (int row = 0; row < map.height; ++row) {
+            if (row > 0) {
+                serializedMap << '#';
+            }
+
+            const int tileIndex = row * map.width + col;
+            serializedMap << map.tiles[tileIndex];
+        }
+    }
+
+    return serializedMap.str();
+}
+
 bool exportStagesToCsv(const std::vector<StageData>& stages, bool isMultiplayerMode, std::string& outputPath) {
     outputPath = getStageCsvFileName(isMultiplayerMode);
     std::ofstream csvFile(outputPath);
@@ -211,26 +233,23 @@ bool exportStagesToCsv(const std::vector<StageData>& stages, bool isMultiplayerM
         return false;
     }
 
-    csvFile << "stage,map,row,col,tile\n";
+    csvFile << "stage,width,height,map,\n";
 
     for (size_t stageIndex = 0; stageIndex < stages.size(); ++stageIndex) {
         const StageData& stage = stages[stageIndex];
 
         for (size_t mapIndex = 0; mapIndex < stage.maps.size(); ++mapIndex) {
             const GeneratedMap& map = stage.maps[mapIndex];
-            const int mapNumber = (mapIndex == 1) ? 102 : static_cast<int>(mapIndex) + 1;
+            const int stageNumber = static_cast<int>(stageIndex) + 1;
+            const int stageLabel = (mapIndex == 0)
+                ? stageNumber
+                : (stageNumber * 100) + (static_cast<int>(mapIndex) + 1);
 
-            for (int row = 0; row < map.height; ++row) {
-                for (int col = 0; col < map.width; ++col) {
-                    const int tileIndex = row * map.width + col;
-                    csvFile
-                        << (stageIndex + 1) << ','
-                        << mapNumber << ','
-                        << (row + 1) << ','
-                        << (col + 1) << ','
-                        << map.tiles[tileIndex] << '\n';
-                }
-            }
+            csvFile
+                << stageLabel << ','
+                << map.width << ','
+                << map.height << ','
+                << serializeMapForCsv(map) << '\n';
         }
     }
 
