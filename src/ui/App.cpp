@@ -498,35 +498,16 @@ int AppUI::run() {
         ImGui::TextUnformatted(isMultiplayerMode ? "Current: Multi Mode" : "Current: Single Mode");
 
         ImGui::Separator();
-        ImGui::TextUnformatted("Export");
-        char exportTitleBuffer[128] = {};
-        std::snprintf(exportTitleBuffer, sizeof(exportTitleBuffer), "%s", exportTitle.c_str());
-        if (ImGui::InputText("Export Title", exportTitleBuffer, sizeof(exportTitleBuffer))) {
-            exportTitle = exportTitleBuffer;
-        }
-
-        if (ImGui::Button("Create CSV File")) {
-            if (generatedStages.empty()) {
-                generationLogs.push_back("[WARN] No stages to export. Generate stages first.");
-            } else {
-                std::string outputCsvPath;
-                const bool csvExported = exportStagesToCsv(
-                    generatedStages,
-                    generatedForMultiplayerMode,
-                    exportTitle,
-                    outputCsvPath
-                );
-
-                if (csvExported) {
-                    generationLogs.push_back("[INFO] Stage CSV exported to '" + outputCsvPath + "'.");
-                } else {
-                    generationLogs.push_back("[ERROR] Failed to export stage CSV file.");
-                }
-            }
-        }
-
-        ImGui::Separator();
         ImGui::TextUnformatted("Create Map");
+        ImGui::Text(
+            "Ready to generate %d stage(s). Current mode: %s (%d map(s) per stage).",
+            stageCount,
+            isMultiplayerMode ? "Multi" : "Single",
+            mapCountPerStage
+        );
+        ImGui::Checkbox("Enable Create Auto Map", &autoMapEnabled);
+        ImGui::TextUnformatted("If enabled, Start Making Stages uses random shuffle (20-100000) and auto-exports CSV.");
+
         if (ImGui::Button("Start Making Stages")) {
             generationLogs.clear();
             generationLogs.push_back("[INFO] Generating " + std::to_string(stageCount) + " stage(s)...");
@@ -601,14 +582,33 @@ int AppUI::run() {
                 }
             }
         }
-        ImGui::Text(
-            "Ready to generate %d stage(s). Current mode: %s (%d map(s) per stage).",
-            stageCount,
-            isMultiplayerMode ? "Multi" : "Single",
-            mapCountPerStage
-        );
-        ImGui::Checkbox("Enable Create Auto Map", &autoMapEnabled);
-        ImGui::TextUnformatted("If enabled, Start Making Stages uses random shuffle (20-100000) and auto-exports CSV.");
+        ImGui::Separator();
+        ImGui::TextUnformatted("Export");
+        char exportTitleBuffer[128] = {};
+        std::snprintf(exportTitleBuffer, sizeof(exportTitleBuffer), "%s", exportTitle.c_str());
+        if (ImGui::InputText("Export Title", exportTitleBuffer, sizeof(exportTitleBuffer))) {
+            exportTitle = exportTitleBuffer;
+        }
+
+        if (ImGui::Button("Create CSV File")) {
+            if (generatedStages.empty()) {
+                generationLogs.push_back("[WARN] No stages to export. Generate stages first.");
+            } else {
+                std::string outputCsvPath;
+                const bool csvExported = exportStagesToCsv(
+                    generatedStages,
+                    generatedForMultiplayerMode,
+                    exportTitle,
+                    outputCsvPath
+                );
+
+                if (csvExported) {
+                    generationLogs.push_back("[INFO] Stage CSV exported to '" + outputCsvPath + "'.");
+                } else {
+                    generationLogs.push_back("[ERROR] Failed to export stage CSV file.");
+                }
+            }
+        }
 
         ImGui::Separator();
         ImGui::Text("Korean font loaded: %s", koreanFontLoaded ? "Yes" : "No (fallback)");
