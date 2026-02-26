@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -104,6 +105,32 @@ std::vector<StageData> createStages(
     }
 
     return stages;
+}
+
+void shuffleMapTiles(GeneratedMap& map, int shuffleCount, std::mt19937& rng) {
+    for (int shuffleIndex = 0; shuffleIndex < shuffleCount; ++shuffleIndex) {
+        std::shuffle(map.tiles.begin(), map.tiles.end(), rng);
+    }
+}
+
+void shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMultiplayerMode) {
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    for (StageData& stage : stages) {
+        if (stage.maps.empty()) {
+            continue;
+        }
+
+        if (isMultiplayerMode) {
+            for (GeneratedMap& map : stage.maps) {
+                shuffleMapTiles(map, shuffleCount, rng);
+            }
+            continue;
+        }
+
+        shuffleMapTiles(stage.maps[0], shuffleCount, rng);
+    }
 }
 
 } // namespace
@@ -229,6 +256,7 @@ int AppUI::run() {
             );
 
             generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
+            shuffleStageMaps(generatedStages, shuffleCount, isMultiplayerMode);
             generatedForMultiplayerMode = isMultiplayerMode;
             currentStageIndex = 0;
 
@@ -236,6 +264,11 @@ int AppUI::run() {
             generationLogs.push_back(
                 "[INFO] Created " + std::to_string(stageCount) +
                 " stage(s), each with " + std::to_string(mapCountPerStage) + " map(s)."
+            );
+            generationLogs.push_back(
+                "[INFO] Shuffled " +
+                std::string(isMultiplayerMode ? "all maps" : "single map per stage") +
+                " " + std::to_string(shuffleCount) + " time(s)."
             );
         }
 
