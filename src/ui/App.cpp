@@ -57,11 +57,19 @@ struct GeneratedMap {
     std::vector<int> tiles;
 };
 
-std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCount) {
+struct StageData {
     std::vector<GeneratedMap> maps;
-    maps.reserve(mapCount);
+};
 
-    for (int mapIndex = 0; mapIndex < mapCount; ++mapIndex) {
+int getMapCountPerStage(bool isMultiplayerMode) {
+    return isMultiplayerMode ? 2 : 1;
+}
+
+std::vector<GeneratedMap> createMapsForStage(int mapWidth, int mapHeight, int mapCountPerStage) {
+    std::vector<GeneratedMap> maps;
+    maps.reserve(mapCountPerStage);
+
+    for (int mapIndex = 0; mapIndex < mapCountPerStage; ++mapIndex) {
         GeneratedMap map;
         map.width = mapWidth;
         map.height = mapHeight;
@@ -79,37 +87,55 @@ std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCou
     return maps;
 }
 
-int getRequiredMapCountPerStage(bool isMultiplayerMode) {
-    return isMultiplayerMode ? 2 : 1;
-}
-
-void syncMapCountToMode(
-    std::vector<GeneratedMap>& maps,
+std::vector<StageData> createStages(
+    int stageCount,
     int mapWidth,
     int mapHeight,
     bool isMultiplayerMode
 ) {
-    const int requiredMapCount = getRequiredMapCountPerStage(isMultiplayerMode);
+    const int mapCountPerStage = getMapCountPerStage(isMultiplayerMode);
+    std::vector<StageData> stages;
+    stages.reserve(stageCount);
 
-    if (static_cast<int>(maps.size()) > requiredMapCount) {
-        maps.resize(requiredMapCount);
-        return;
+    for (int stageIndex = 0; stageIndex < stageCount; ++stageIndex) {
+        StageData stage;
+        stage.maps = createMapsForStage(mapWidth, mapHeight, mapCountPerStage);
+        stages.push_back(std::move(stage));
     }
 
-    if (static_cast<int>(maps.size()) < requiredMapCount) {
-        const int missingMapCount = requiredMapCount - static_cast<int>(maps.size());
-        std::vector<GeneratedMap> additionalMaps = createTileMaps(mapWidth, mapHeight, missingMapCount);
-        maps.insert(maps.end(), additionalMaps.begin(), additionalMaps.end());
+    return stages;
+}
+
+void syncStageMapCountToMode(
+    std::vector<StageData>& stages,
+    int mapWidth,
+    int mapHeight,
+    bool isMultiplayerMode
+) {
+    const int mapCountPerStage = getMapCountPerStage(isMultiplayerMode);
+
+    for (StageData& stage : stages) {
+        if (static_cast<int>(stage.maps.size()) > mapCountPerStage) {
+            stage.maps.resize(mapCountPerStage);
+            continue;
+        }
+
+        if (static_cast<int>(stage.maps.size()) < mapCountPerStage) {
+            const int missingMapCount = mapCountPerStage - static_cast<int>(stage.maps.size());
+            std::vector<GeneratedMap> additionalMaps = createMapsForStage(mapWidth, mapHeight, missingMapCount);
+            stage.maps.insert(stage.maps.end(), additionalMaps.begin(), additionalMaps.end());
+        }
     }
 }
 } // namespace
 
 int AppUI::run() {
+    int stageCount = 1;
     int mapWidth = 3;
     int mapHeight = 2;
     bool isMultiplayerMode = false;
-    std::vector<GeneratedMap> generatedMaps;
-    int currentMapIndex = 0;
+    std::vector<StageData> generatedStages;
+    int currentStageIndex = 0;
     std::vector<std::string> generationLogs = {
         "[INFO] Ready.",
         "[INFO] Waiting for generation tasks..."
@@ -191,31 +217,43 @@ int AppUI::run() {
         ImGui::NewFrame();
 
         ImGui::Begin("Control Panel");
-        ImGui::TextUnformatted("Stage Map Count");
+        ImGui::TextUnformatted("Stage Count");
         ImGui::Separator();
-        const int mapsVisibleInViewer = getRequiredMapCountPerStage(isMultiplayerMode);
-        ImGui::Text(
-            "Single mode generates 1 map per stage. Multi mode generates 2 maps per stage."
-        );
-        if (ImGui::Button("Start Making Maps")) {
-            generationLogs.clear();
-            generationLogs.push_back(
-                "[INFO] Generating " + std::to_string(mapsVisibleInViewer) + " map(s)..."
-            );
-            generatedMaps.clear();
-            generatedMaps = createTileMaps(mapWidth, mapHeight, mapsVisibleInViewer);
-            currentMapIndex = 0;
-            generationLogs.push_back("[INFO] Done.");
-            generationLogs.push_back(
-                "[INFO] Viewer shows " + std::to_string(mapsVisibleInViewer) +
-                " map(s) in " + (isMultiplayerMode ? std::string("Multi") : std::string("Single")) + " mode."
-            );
+        ImGui::InputInt("Stages to Generate", &stageCount);
+        if (stageCount < 1) {
+            stageCount = 1;
         }
+
+        const int mapCountPerStage = getMapCountPerStage(isMultiplayerMode);
         ImGui::Text(
-            "Ready to generate %d map(s) for this stage in %s mode.",
-            mapsVisibleInViewer,
+            "Each stage contains %d map(s) in %s mode.",
+            mapCountPerStage,
             isMultiplayerMode ? "Multi" : "Single"
         );
+
+        if (ImGui::Button("Start Making Stages")) {
+            generationLogs.clear();
+            generationLogs.push_back(
+                "[INFO] Generating " + std::to_string(stageCount) + " stage(s)..."
+            );
+
+            generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
+            currentStageIndex = 0;
+
+            generationLogs.push_back("[INFO] Done.");
+            generationLogs.push_back(
+                "[INFO] Created " + std::to_string(stageCount) +
+                " stage(s), each with " + std::to_string(mapCountPerStage) + " map(s)."
+            );
+        }
+
+        ImGui::Text(
+            "Ready to generate %d stage(s). Current mode: %s (%d map(s) per stage).",
+            stageCount,
+            isMultiplayerMode ? "Multi" : "Single",
+            mapCountPerStage
+        );
+
         ImGui::Separator();
         ImGui::TextUnformatted("Map Size");
         ImGui::InputInt("Width", &mapWidth);
@@ -226,24 +264,28 @@ int AppUI::run() {
         if (mapHeight < 1) {
             mapHeight = 1;
         }
+
         ImGui::Separator();
         ImGui::TextUnformatted("Mode");
         const bool previousMultiplayerMode = isMultiplayerMode;
         ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
         if (previousMultiplayerMode != isMultiplayerMode) {
-            syncMapCountToMode(generatedMaps, mapWidth, mapHeight, isMultiplayerMode);
+            syncStageMapCountToMode(generatedStages, mapWidth, mapHeight, isMultiplayerMode);
 
-            if (!generatedMaps.empty()) {
-                currentMapIndex = std::clamp(currentMapIndex, 0, static_cast<int>(generatedMaps.size()) - 1);
+            if (!generatedStages.empty()) {
+                currentStageIndex = std::clamp(currentStageIndex, 0, static_cast<int>(generatedStages.size()) - 1);
             } else {
-                currentMapIndex = 0;
+                currentStageIndex = 0;
             }
 
             generationLogs.push_back(
-                "[INFO] Viewer shows " + std::to_string(isMultiplayerMode ? 2 : 1) +
-                " map(s) in " + (isMultiplayerMode ? std::string("Multi") : std::string("Single")) + " mode."
+                "[INFO] Mode switched to " +
+                std::string(isMultiplayerMode ? "Multi" : "Single") +
+                ". Each stage now has " + std::to_string(getMapCountPerStage(isMultiplayerMode)) +
+                " map(s)."
             );
         }
+
         ImGui::TextUnformatted(isMultiplayerMode ? "Current: Multi Mode" : "Current: Single Mode");
         ImGui::Separator();
         ImGui::Text("Korean font loaded: %s", koreanFontLoaded ? "Yes" : "No (fallback)");
@@ -256,57 +298,37 @@ int AppUI::run() {
         ImGui::End();
 
         ImGui::Begin("Viewer");
-        if (generatedMaps.empty()) {
-            ImGui::TextUnformatted("Press 'Start Making Maps' to create a tile map.");
+        if (generatedStages.empty()) {
+            ImGui::TextUnformatted("Press 'Start Making Stages' to create stages.");
         } else {
             constexpr float kTileSize = 28.0f;
             constexpr float kTileGap = 4.0f;
             constexpr float kMapPanelGap = 32.0f;
 
-            currentMapIndex = std::clamp(currentMapIndex, 0, static_cast<int>(generatedMaps.size()) - 1);
+            currentStageIndex = std::clamp(currentStageIndex, 0, static_cast<int>(generatedStages.size()) - 1);
+            StageData& currentStage = generatedStages[currentStageIndex];
 
-            if (ImGui::Button("Prev")) {
-                currentMapIndex = std::max(0, currentMapIndex - 1);
+            if (ImGui::Button("Prev Stage")) {
+                currentStageIndex = std::max(0, currentStageIndex - 1);
             }
             ImGui::SameLine();
-            if (ImGui::Button("Next")) {
-                currentMapIndex = std::min(static_cast<int>(generatedMaps.size()) - 1, currentMapIndex + 1);
+            if (ImGui::Button("Next Stage")) {
+                currentStageIndex = std::min(static_cast<int>(generatedStages.size()) - 1, currentStageIndex + 1);
             }
             ImGui::SameLine();
-            if (isMultiplayerMode) {
-                const int rightIndex = currentMapIndex + 1;
-                if (rightIndex < static_cast<int>(generatedMaps.size())) {
-                    ImGui::Text("Stages %d & %d / %zu", currentMapIndex + 1, rightIndex + 1, generatedMaps.size());
-                } else {
-                    ImGui::Text("Stage %d & No Stage / %zu", currentMapIndex + 1, generatedMaps.size());
-                }
-            } else {
-                ImGui::Text("Stage %d / %zu", currentMapIndex + 1, generatedMaps.size());
-            }
+            ImGui::Text("Stage %d / %zu", currentStageIndex + 1, generatedStages.size());
 
             ImGui::Separator();
 
-            auto drawMapPanel = [&](int mapIndex, bool allowPlaceholder) {
-                if (mapIndex < 0 || mapIndex >= static_cast<int>(generatedMaps.size())) {
-                    if (allowPlaceholder) {
-                        ImGui::TextUnformatted("No Map");
-                        ImGui::Separator();
-                        ImGui::BeginDisabled();
-                        ImGui::Button("No Map", ImVec2(120.0f, 48.0f));
-                        ImGui::EndDisabled();
-                    }
-                    return;
-                }
-
-                const GeneratedMap& map = generatedMaps[mapIndex];
-                ImGui::Text("Stage %d", mapIndex + 1);
+            auto drawMapPanel = [&](const GeneratedMap& map, int mapNumberInStage) {
+                ImGui::Text("Stage %d - Map %d", currentStageIndex + 1, mapNumberInStage);
                 ImGui::Text("Tile Map (%d x %d)", map.width, map.height);
                 ImGui::Separator();
 
                 for (int row = 0; row < map.height; ++row) {
                     for (int col = 0; col < map.width; ++col) {
                         const int tileIndex = row * map.width + col;
-                        ImGui::PushID(static_cast<int>((mapIndex * 100000) + tileIndex));
+                        ImGui::PushID((currentStageIndex * 1000000) + (mapNumberInStage * 100000) + tileIndex);
                         const std::string tileLabel = std::to_string(map.tiles[tileIndex]);
                         ImGui::Button(tileLabel.c_str(), ImVec2(kTileSize, kTileSize));
                         ImGui::PopID();
@@ -323,16 +345,26 @@ int AppUI::run() {
                 const float panelWidth = std::max(120.0f, (availableWidth - kMapPanelGap) * 0.5f);
 
                 ImGui::BeginChild("MapPanelLeft", ImVec2(panelWidth, 0), true);
-                drawMapPanel(currentMapIndex, false);
+                if (!currentStage.maps.empty()) {
+                    drawMapPanel(currentStage.maps[0], 1);
+                }
                 ImGui::EndChild();
 
                 ImGui::SameLine(0.0f, kMapPanelGap);
 
                 ImGui::BeginChild("MapPanelRight", ImVec2(panelWidth, 0), true);
-                drawMapPanel(currentMapIndex + 1, true);
+                if (currentStage.maps.size() >= 2) {
+                    drawMapPanel(currentStage.maps[1], 2);
+                } else {
+                    ImGui::TextUnformatted("No Map");
+                }
                 ImGui::EndChild();
             } else {
-                drawMapPanel(currentMapIndex, false);
+                if (!currentStage.maps.empty()) {
+                    drawMapPanel(currentStage.maps[0], 1);
+                } else {
+                    ImGui::TextUnformatted("No Map");
+                }
             }
         }
         ImGui::End();
