@@ -7,6 +7,8 @@
 #include <SDL.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <random>
@@ -201,8 +203,37 @@ bool shuffleMultiplayerTileNumbersAcrossMapsAvoidingVerticalMatches(
     return false;
 }
 
-std::string getStageCsvFileName(bool isMultiplayerMode) {
-    return isMultiplayerMode ? "stages_multi_mode.csv" : "stages_single_mode.csv";
+std::string normalizeExportTitle(const std::string& rawTitle) {
+    std::string normalizedTitle;
+    normalizedTitle.reserve(rawTitle.size());
+
+    for (char ch : rawTitle) {
+        if (std::isalnum(static_cast<unsigned char>(ch))) {
+            normalizedTitle.push_back(ch);
+        } else if (std::isspace(static_cast<unsigned char>(ch)) || ch == '-' || ch == '_') {
+            normalizedTitle.push_back('_');
+        }
+    }
+
+    while (!normalizedTitle.empty() && normalizedTitle.front() == '_') {
+        normalizedTitle.erase(normalizedTitle.begin());
+    }
+    while (!normalizedTitle.empty() && normalizedTitle.back() == '_') {
+        normalizedTitle.pop_back();
+    }
+
+    return normalizedTitle;
+}
+
+std::string getStageCsvFileName(bool isMultiplayerMode, const std::string& exportTitle) {
+    const std::string baseName = isMultiplayerMode ? "stages_multi_mode" : "stages_single_mode";
+    const std::string normalizedTitle = normalizeExportTitle(exportTitle);
+
+    if (normalizedTitle.empty()) {
+        return baseName + ".csv";
+    }
+
+    return baseName + "_" + normalizedTitle + ".csv";
 }
 
 std::string serializeMapForCsv(const GeneratedMap& map) {
@@ -226,8 +257,13 @@ std::string serializeMapForCsv(const GeneratedMap& map) {
     return serializedMap.str();
 }
 
-bool exportStagesToCsv(const std::vector<StageData>& stages, bool isMultiplayerMode, std::string& outputPath) {
-    outputPath = getStageCsvFileName(isMultiplayerMode);
+bool exportStagesToCsv(
+    const std::vector<StageData>& stages,
+    bool isMultiplayerMode,
+    const std::string& exportTitle,
+    std::string& outputPath
+) {
+    outputPath = getStageCsvFileName(isMultiplayerMode, exportTitle);
     std::ofstream csvFile(outputPath);
     if (!csvFile.is_open()) {
         return false;
@@ -315,6 +351,7 @@ int AppUI::run() {
     bool generatedForMultiplayerMode = false;
     std::vector<StageData> generatedStages;
     int currentStageIndex = 0;
+    std::string exportTitle;
     std::vector<std::string> generationLogs = {
         "[INFO] Ready.",
         "[INFO] Waiting for generation tasks..."
@@ -431,9 +468,6 @@ int AppUI::run() {
             generatedForMultiplayerMode = isMultiplayerMode;
             currentStageIndex = 0;
 
-            std::string outputCsvPath;
-            const bool csvExported = exportStagesToCsv(generatedStages, isMultiplayerMode, outputCsvPath);
-
             generationLogs.push_back("[INFO] Done.");
             generationLogs.push_back(
                 "[INFO] Created " + std::to_string(stageCount) +
@@ -451,11 +485,31 @@ int AppUI::run() {
                     " map(s) could not avoid vertically adjacent equal numbers after many retries."
                 );
             }
+        }
 
-            if (csvExported) {
-                generationLogs.push_back("[INFO] Stage CSV exported to '" + outputCsvPath + "'.");
+        char exportTitleBuffer[128] = {};
+        std::snprintf(exportTitleBuffer, sizeof(exportTitleBuffer), "%s", exportTitle.c_str());
+        if (ImGui::InputText("Export Title", exportTitleBuffer, sizeof(exportTitleBuffer))) {
+            exportTitle = exportTitleBuffer;
+        }
+
+        if (ImGui::Button("Create CSV File")) {
+            if (generatedStages.empty()) {
+                generationLogs.push_back("[WARN] No stages to export. Generate stages first.");
             } else {
-                generationLogs.push_back("[ERROR] Failed to export stage CSV file.");
+                std::string outputCsvPath;
+                const bool csvExported = exportStagesToCsv(
+                    generatedStages,
+                    generatedForMultiplayerMode,
+                    exportTitle,
+                    outputCsvPath
+                );
+
+                if (csvExported) {
+                    generationLogs.push_back("[INFO] Stage CSV exported to '" + outputCsvPath + "'.");
+                } else {
+                    generationLogs.push_back("[ERROR] Failed to export stage CSV file.");
+                }
             }
         }
 
