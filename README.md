@@ -1,18 +1,30 @@
-# Tile Matching Game
+# Tile Matching Game (ImGui UI Skeleton)
 
-Visual Studio 2022에서 바로 열고 실행할 수 있는 C++ 콘솔 타일 매칭 게임 프로젝트입니다.
+C++20, CMake, SDL2, Dear ImGui 기반의 데스크톱 Immediate Mode GUI 프레임 프로젝트입니다.
 
 ## 구성
-- `TileMatchingGame.sln`: Visual Studio 2022 솔루션 파일
-- `TileMatchingGame/TileMatchingGame.vcxproj`: C++ 프로젝트 파일 (`v143`, `x64`, `Debug/Release`)
-- `TileMatchingGame/main.cpp`: 게임 로직
+- `CMakeLists.txt`: CMake 빌드 설정
+- `src/main.cpp`: `AppUI` 생성 및 `run()` 호출
+- `src/ui/App.hpp`, `src/ui/App.cpp`: SDL + ImGui 초기화/루프 및 패널 UI
 
-## 실행 방법 (Visual Studio 2022)
-1. Visual Studio 2022에서 `TileMatchingGame.sln` 파일을 엽니다.
-2. 솔루션 구성은 `Debug | x64`를 선택합니다.
-3. `F5` (디버깅 시작) 또는 `Ctrl + F5` (디버깅 없이 시작)로 실행합니다.
+## 동작 개요
+- SDL 비디오 초기화
+- `1500x950` 창 생성
+- `SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC` 렌더러 생성
+- Dear ImGui context 생성 및 Dark 테마 적용
+- `imgui_impl_sdl2`, `imgui_impl_sdlrenderer2` 백엔드 초기화
+- 메인 루프에서 SDL 이벤트 처리 후 ImGui 프레임 렌더링
+- 패널 3개 표시
+  - `Controls`
+  - `Generation Logs`
+  - `Viewer`
+- 한국어 폰트 로드 시도 후 실패 시 기본 폰트로 fallback
 
-## 게임 방법
-- 보드의 같은 문자를 가진 타일 2개를 선택하면 제거됩니다.
-- 입력 형식: `행 열` (예: `1 2`)
-- 모든 타일을 제거하면 게임이 끝납니다.
+## 빌드/실행
+```bash
+cmake -S . -B build
+cmake --build build -j
+./build/tile_matching_ui
+```
+
+Windows의 경우 실행 파일 경로는 생성된 빌드 구성(예: `build/Debug/`)에 따라 달라질 수 있습니다.
