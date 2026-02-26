@@ -534,10 +534,10 @@ int AppUI::run() {
             if (autoMapEnabled) {
                 const int autoMapShuffleCount = generateAutoMapShuffleCount();
                 generationLogs.push_back(
-                    "[INFO] Create Map session mode is enabled (random shuffle + auto CSV export)."
+                    "[INFO] Create Auto Map mode is enabled (random shuffle + auto CSV export)."
                 );
                 generationLogs.push_back(
-                    "[INFO] Create Map session randomized shuffle count to " +
+                    "[INFO] Create Auto Map randomized shuffle count to " +
                     std::to_string(autoMapShuffleCount) + "."
                 );
 
@@ -568,9 +568,9 @@ int AppUI::run() {
                 }
 
                 if (csvExported) {
-                    generationLogs.push_back("[INFO] Create Map session exported CSV to '" + outputCsvPath + "'.");
+                    generationLogs.push_back("[INFO] Create Auto Map exported CSV to '" + outputCsvPath + "'.");
                 } else {
-                    generationLogs.push_back("[ERROR] Create Map session failed to export CSV.");
+                    generationLogs.push_back("[ERROR] Create Auto Map failed to export CSV.");
                 }
             } else {
                 generationLogs.push_back(
@@ -607,7 +607,7 @@ int AppUI::run() {
             isMultiplayerMode ? "Multi" : "Single",
             mapCountPerStage
         );
-        ImGui::Checkbox("Enable Create Map Session", &autoMapEnabled);
+        ImGui::Checkbox("Enable Create Auto Map", &autoMapEnabled);
         ImGui::TextUnformatted("If enabled, Start Making Stages uses random shuffle (20-100000) and auto-exports CSV.");
 
         ImGui::Separator();
