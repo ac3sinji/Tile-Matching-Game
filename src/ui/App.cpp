@@ -110,6 +110,7 @@ std::vector<StageData> createStages(
 
 int AppUI::run() {
     int stageCount = 1;
+    int shuffleCount = 1;
     int mapWidth = 3;
     int mapHeight = 2;
     bool isMultiplayerMode = false;
@@ -204,6 +205,13 @@ int AppUI::run() {
             stageCount = 1;
         }
 
+        ImGui::Separator();
+        ImGui::TextUnformatted("섞는 횟수");
+        ImGui::InputInt("Shuffle Count", &shuffleCount);
+        if (shuffleCount < 1) {
+            shuffleCount = 1;
+        }
+
         const int mapCountPerStage = getMapCountPerStage(isMultiplayerMode);
         ImGui::Text(
             "Each stage contains %d map(s) in %s mode.",
@@ -215,6 +223,9 @@ int AppUI::run() {
             generationLogs.clear();
             generationLogs.push_back(
                 "[INFO] Generating " + std::to_string(stageCount) + " stage(s)..."
+            );
+            generationLogs.push_back(
+                "[INFO] Shuffle count set to " + std::to_string(shuffleCount) + "."
             );
 
             generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
