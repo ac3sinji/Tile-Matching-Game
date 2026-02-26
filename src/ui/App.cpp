@@ -86,6 +86,11 @@ int AppUI::run() {
     int mapHeight = 2;
     bool isMultiplayerMode = false;
     std::vector<GeneratedMap> generatedMaps;
+    int currentMapIndex = 0;
+    std::vector<std::string> generationLogs = {
+        "[INFO] Ready.",
+        "[INFO] Waiting for generation tasks..."
+    };
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -171,8 +176,16 @@ int AppUI::run() {
         }
         const int mapsVisibleInViewer = isMultiplayerMode ? 2 : 1;
         if (ImGui::Button("Start Making Maps")) {
+            generationLogs.clear();
+            generationLogs.push_back("[INFO] Generating " + std::to_string(mapCount) + " map(s)...");
             generatedMaps.clear();
             generatedMaps = createTileMaps(mapWidth, mapHeight, mapCount);
+            currentMapIndex = 0;
+            generationLogs.push_back("[INFO] Done.");
+            generationLogs.push_back(
+                "[INFO] Viewer shows " + std::to_string(mapsVisibleInViewer) +
+                " map(s) in " + (isMultiplayerMode ? std::string("Multi") : std::string("Single")) + " mode."
+            );
         }
         ImGui::Text(
             "Ready to generate %d map(s). Viewer shows %d map(s) in %s mode.",
@@ -192,15 +205,29 @@ int AppUI::run() {
         }
         ImGui::Separator();
         ImGui::TextUnformatted("Mode");
+        const bool previousMultiplayerMode = isMultiplayerMode;
         ImGui::Checkbox("Multiplayer", &isMultiplayerMode);
+        if (previousMultiplayerMode != isMultiplayerMode) {
+            if (!generatedMaps.empty()) {
+                currentMapIndex = std::clamp(currentMapIndex, 0, static_cast<int>(generatedMaps.size()) - 1);
+            } else {
+                currentMapIndex = 0;
+            }
+
+            generationLogs.push_back(
+                "[INFO] Viewer shows " + std::to_string(isMultiplayerMode ? 2 : 1) +
+                " map(s) in " + (isMultiplayerMode ? std::string("Multi") : std::string("Single")) + " mode."
+            );
+        }
         ImGui::TextUnformatted(isMultiplayerMode ? "Current: Multi Mode" : "Current: Single Mode");
         ImGui::Separator();
         ImGui::Text("Korean font loaded: %s", koreanFontLoaded ? "Yes" : "No (fallback)");
         ImGui::End();
 
         ImGui::Begin("Generation Logs");
-        ImGui::TextUnformatted("[INFO] Ready.");
-        ImGui::TextUnformatted("[INFO] Waiting for generation tasks...");
+        for (const std::string& log : generationLogs) {
+            ImGui::TextUnformatted(log.c_str());
+        }
         ImGui::End();
 
         ImGui::Begin("Viewer");
@@ -209,12 +236,45 @@ int AppUI::run() {
         } else {
             constexpr float kTileSize = 28.0f;
             constexpr float kTileGap = 4.0f;
-            constexpr float kMapGap = 24.0f;
+            constexpr float kMapPanelGap = 32.0f;
 
-            const size_t visibleMapCount = std::min(generatedMaps.size(), static_cast<size_t>(isMultiplayerMode ? 2 : 1));
-            for (size_t mapIndex = 0; mapIndex < visibleMapCount; ++mapIndex) {
+            currentMapIndex = std::clamp(currentMapIndex, 0, static_cast<int>(generatedMaps.size()) - 1);
+
+            if (ImGui::Button("Prev")) {
+                currentMapIndex = std::max(0, currentMapIndex - 1);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Next")) {
+                currentMapIndex = std::min(static_cast<int>(generatedMaps.size()) - 1, currentMapIndex + 1);
+            }
+            ImGui::SameLine();
+            if (isMultiplayerMode) {
+                const int rightIndex = currentMapIndex + 1;
+                if (rightIndex < static_cast<int>(generatedMaps.size())) {
+                    ImGui::Text("Maps %d & %d / %zu", currentMapIndex + 1, rightIndex + 1, generatedMaps.size());
+                } else {
+                    ImGui::Text("Maps %d & No Map / %zu", currentMapIndex + 1, generatedMaps.size());
+                }
+            } else {
+                ImGui::Text("Map %d / %zu", currentMapIndex + 1, generatedMaps.size());
+            }
+
+            ImGui::Separator();
+
+            auto drawMapPanel = [&](int mapIndex, bool allowPlaceholder) {
+                if (mapIndex < 0 || mapIndex >= static_cast<int>(generatedMaps.size())) {
+                    if (allowPlaceholder) {
+                        ImGui::TextUnformatted("No Map");
+                        ImGui::Separator();
+                        ImGui::BeginDisabled();
+                        ImGui::Button("No Map", ImVec2(120.0f, 48.0f));
+                        ImGui::EndDisabled();
+                    }
+                    return;
+                }
+
                 const GeneratedMap& map = generatedMaps[mapIndex];
-                ImGui::Text("Tile Map %zu (%d x %d)", mapIndex + 1, map.width, map.height);
+                ImGui::Text("Tile Map %d (%d x %d)", mapIndex + 1, map.width, map.height);
                 ImGui::Separator();
 
                 for (int row = 0; row < map.height; ++row) {
@@ -230,10 +290,23 @@ int AppUI::run() {
                         }
                     }
                 }
+            };
 
-                if (mapIndex + 1 < visibleMapCount) {
-                    ImGui::Dummy(ImVec2(0.0f, kMapGap));
-                }
+            if (isMultiplayerMode) {
+                const float availableWidth = ImGui::GetContentRegionAvail().x;
+                const float panelWidth = std::max(120.0f, (availableWidth - kMapPanelGap) * 0.5f);
+
+                ImGui::BeginChild("MapPanelLeft", ImVec2(panelWidth, 0), true);
+                drawMapPanel(currentMapIndex, false);
+                ImGui::EndChild();
+
+                ImGui::SameLine(0.0f, kMapPanelGap);
+
+                ImGui::BeginChild("MapPanelRight", ImVec2(panelWidth, 0), true);
+                drawMapPanel(currentMapIndex + 1, true);
+                ImGui::EndChild();
+            } else {
+                drawMapPanel(currentMapIndex, false);
             }
         }
         ImGui::End();
