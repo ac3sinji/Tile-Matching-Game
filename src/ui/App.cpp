@@ -206,7 +206,7 @@ int AppUI::run() {
         }
 
         ImGui::Separator();
-        ImGui::TextUnformatted("섞는 횟수");
+        ImGui::TextUnformatted("Shuffle Count");
         ImGui::InputInt("Shuffle Count", &shuffleCount);
         if (shuffleCount < 1) {
             shuffleCount = 1;
