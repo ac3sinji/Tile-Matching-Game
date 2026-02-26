@@ -113,6 +113,7 @@ int AppUI::run() {
     int mapWidth = 3;
     int mapHeight = 2;
     bool isMultiplayerMode = false;
+    bool generatedForMultiplayerMode = false;
     std::vector<StageData> generatedStages;
     int currentStageIndex = 0;
     std::vector<std::string> generationLogs = {
@@ -217,6 +218,7 @@ int AppUI::run() {
             );
 
             generatedStages = createStages(stageCount, mapWidth, mapHeight, isMultiplayerMode);
+            generatedForMultiplayerMode = isMultiplayerMode;
             currentStageIndex = 0;
 
             generationLogs.push_back("[INFO] Done.");
@@ -317,7 +319,7 @@ int AppUI::run() {
                 }
             };
 
-            if (isMultiplayerMode) {
+            if (generatedForMultiplayerMode) {
                 const float availableWidth = ImGui::GetContentRegionAvail().x;
                 const float panelWidth = std::max(120.0f, (availableWidth - kMapPanelGap) * 0.5f);
 
