@@ -7,7 +7,6 @@
 #include <SDL.h>
 
 #include <filesystem>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -61,17 +60,16 @@ std::vector<GeneratedMap> createTileMaps(int mapWidth, int mapHeight, int mapCou
     std::vector<GeneratedMap> maps;
     maps.reserve(mapCount);
 
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<int> tileValue(1, 9);
-
     for (int mapIndex = 0; mapIndex < mapCount; ++mapIndex) {
         GeneratedMap map;
         map.width = mapWidth;
         map.height = mapHeight;
         map.tiles.reserve(mapWidth * mapHeight);
 
-        for (int i = 0; i < mapWidth * mapHeight; ++i) {
-            map.tiles.push_back(tileValue(rng));
+        for (int row = 0; row < mapHeight; ++row) {
+            for (int col = 0; col < mapWidth; ++col) {
+                map.tiles.push_back(col + 1);
+            }
         }
 
         maps.push_back(std::move(map));
