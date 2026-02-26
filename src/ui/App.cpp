@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
 #include <random>
 #include <string>
 #include <vector>
@@ -199,6 +200,43 @@ bool shuffleMultiplayerTileNumbersAcrossMapsAvoidingVerticalMatches(
     return false;
 }
 
+std::string getStageCsvFileName(bool isMultiplayerMode) {
+    return isMultiplayerMode ? "stages_multi_mode.csv" : "stages_single_mode.csv";
+}
+
+bool exportStagesToCsv(const std::vector<StageData>& stages, bool isMultiplayerMode, std::string& outputPath) {
+    outputPath = getStageCsvFileName(isMultiplayerMode);
+    std::ofstream csvFile(outputPath);
+    if (!csvFile.is_open()) {
+        return false;
+    }
+
+    csvFile << "stage,map,row,col,tile\n";
+
+    for (size_t stageIndex = 0; stageIndex < stages.size(); ++stageIndex) {
+        const StageData& stage = stages[stageIndex];
+
+        for (size_t mapIndex = 0; mapIndex < stage.maps.size(); ++mapIndex) {
+            const GeneratedMap& map = stage.maps[mapIndex];
+            const int mapNumber = (mapIndex == 1) ? 102 : static_cast<int>(mapIndex) + 1;
+
+            for (int row = 0; row < map.height; ++row) {
+                for (int col = 0; col < map.width; ++col) {
+                    const int tileIndex = row * map.width + col;
+                    csvFile
+                        << (stageIndex + 1) << ','
+                        << mapNumber << ','
+                        << (row + 1) << ','
+                        << (col + 1) << ','
+                        << map.tiles[tileIndex] << '\n';
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 int shuffleStageMaps(std::vector<StageData>& stages, int shuffleCount, bool isMultiplayerMode) {
     std::random_device rd;
     std::mt19937 rng(rd());
@@ -355,6 +393,9 @@ int AppUI::run() {
             generatedForMultiplayerMode = isMultiplayerMode;
             currentStageIndex = 0;
 
+            std::string outputCsvPath;
+            const bool csvExported = exportStagesToCsv(generatedStages, isMultiplayerMode, outputCsvPath);
+
             generationLogs.push_back("[INFO] Done.");
             generationLogs.push_back(
                 "[INFO] Created " + std::to_string(stageCount) +
@@ -371,6 +412,12 @@ int AppUI::run() {
                     "[WARN] " + std::to_string(invalidMapCount) +
                     " map(s) could not avoid vertically adjacent equal numbers after many retries."
                 );
+            }
+
+            if (csvExported) {
+                generationLogs.push_back("[INFO] Stage CSV exported to '" + outputCsvPath + "'.");
+            } else {
+                generationLogs.push_back("[ERROR] Failed to export stage CSV file.");
             }
         }
 
