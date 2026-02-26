@@ -191,7 +191,7 @@ int AppUI::run() {
             for (int row = 0; row < generatedMapHeight; ++row) {
                 for (int col = 0; col < generatedMapWidth; ++col) {
                     ImGui::PushID(row * generatedMapWidth + col);
-                    const std::string tileLabel = std::to_string(col);
+                    const std::string tileLabel = std::to_string(col + 1);
                     ImGui::Button(tileLabel.c_str(), ImVec2(kTileSize, kTileSize));
                     ImGui::PopID();
 
